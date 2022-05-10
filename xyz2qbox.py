@@ -1,6 +1,6 @@
 # generate a Qbox input file from an xyz file
 # Written by Arpan Kundu 
-# Version: October 8, 2019
+# Version: June 29, 2021
 # use: python3 xyz2qbox.py file.xyz
 
 import sys, math
@@ -13,20 +13,26 @@ conv2bohr= {
   "atomic_unit": 1.000000
            }
 
+color = True
+
+pseudo_dir="/home/arpank/pseudopotentials/"
+
 ###### Default unit parameters, Qbox commands, Qbox variables ########
 pos_unit= "angstrom"
 cell_unit="angstrom" 
-default_qbox_1st_cmd = " randomize_wf, run -atomic_density 0 200 10"
-default_qbox_cmd = " run 0 60 10 "   
-default_plot_cmd = None          #" plot -density den"                  
+default_qbox_1st_cmd = " randomize_wf, run -atomic_density 0 100 10"
+default_qbox_cmd = " run 0 60 10"   
+default_plot_cmd = None          #" plot -density den"           
+default_spectrum_cmd = None       
 ecut_default = 50.0
 wf_dyn_default = "JD"
 xc_default = "PBE"
 scf_tol_default = 1.e-8
-nempty_default = 5
+nempty_default = 100
 pseudo_default = 'ONCV_PBE-1.0'
 qbox_cell_cmd = " set cell "
 save_wf_default = 'n'
+
 
 ###### Reading xyz file ###############################
 if len(sys.argv) < 2:
@@ -44,11 +50,14 @@ if remainder != 0:
    sys.exit("\033[91mFile: "+str(sys.argv[1])+ " is truncated\033[00m")
 
 ##### color escape sequence variables ##########################################
-warning = "\033[91m"                ## Red for warning
-statement = "\033[95m"             ## Pink for printing statements
-prompt = "\033[92m"                ## Green promt for asking input
-cached = "\033[97m"                ## White for printing default/cached value
-colorexit="\033[00m"               ## Exiting color
+if color:
+   warning = "\033[91m"                ## Red for warning
+   statement = "\033[95m"             ## Pink for printing statements
+   prompt = "\033[92m"                ## Green promt for asking input
+   cached = "\033[97m"                ## White for printing default/cached value
+   colorexit="\033[00m"               ## Exiting color
+else:
+   warning = ""; statement = ""; prompt = ""; cached = ""; colorexit = ""
 ################################################################################
 
 info_print=True
@@ -131,6 +140,11 @@ Hints:\n \
      (2) More than one commands should be separated by a comma.\n"+colorexit))\
              or default_plot_cmd
 
+spectrum_cmd = str(input(prompt+"Enter qbox spectrum command: "+statement+"(Default = "+cached+"' " +\
+                     str(default_spectrum_cmd)+ "'" + statement+")\n\
+Hints:\n \
+     (1) Example:"+cached+" spectrum options filename"+statement+" (without .dat extension) \n " +colorexit))\
+             or default_spectrum_cmd
 
 save_wf = str(input(prompt+"Do you want to save sample for each configurations (y/n)? "+\
           statement+"(Default = "+ cached+save_wf_default+statement+") "+colorexit) or save_wf_default)
@@ -214,11 +228,11 @@ outfil.write(" set xc "+xc+" \n"+\
 all_species_files=''
 for species in species_set:
     all_species_files=all_species_files+'\n'+species+"_"+pseudo+".xml"
-    outfil.write(" species  "+species+"_species "+species+"_"+pseudo+".xml\n")
+    outfil.write(" species  "+species+"_species "+pseudo_dir+species+"_"+pseudo+".xml\n")
 
 #### Warning print
 print(warning+"Warning!\nFiles: "+cached+ all_species_files + warning+\
-       "\nmust be present in the Qbox run directory."+colorexit)
+       "\nmust be present in the following pseudo-potential directory.\n"+colorexit+pseudo_dir)
 if cell_tag is None:
    print('\n'+warning+"Cell parameters are not present/understood. \nPlease remember to use "+cached+\
         "set cell "+warning+"command once for cell parameters input."+colorexit)  
@@ -240,13 +254,17 @@ for frame in range(start_frame,end_frame,step_frame):
        outfil.write(comment_string)
     else:
        line2=lines[iline].split()  
-       bead_index = line2.index("Bead:")
-       step_index = line2.index("Step:")
+       try:  bead_index = line2.index("Bead:")
+       except ValueError: bead_index = len(line2)
+       try:  step_index = line2.index("*Step:")
+       except ValueError: step_index = len(line2)
        try:
-          comment_string = comment_string + ' i-PI-Step:  %8d '%int(line2[step_index+1]) +\
-                        " i-PI-Bead: %4d"%int(line2[bead_index+1])+"\n"
+          comment_string = comment_string + ' Step:  '+ line2[step_index+1] +\
+                        " i-PI-Bead: " + line2[bead_index+1]+"\n"
        except ValueError:
           comment_string = comment_string +'#\n' 
+       except IndexError:
+          comment_string = comment_string +'#\n'
        cell_string = get_ipi_cell(line2)+"\n"
        outfil.write(comment_string+cell_string)
 
@@ -272,6 +290,9 @@ for frame in range(start_frame,end_frame,step_frame):
     if plot_cmd is not None:
        for cmd in plot_cmd.split(','):
            outfil.write(cmd+"_frame-"+str(frame+1)+".cube"+"\n")
+
+    if spectrum_cmd is not None:
+       outfil.write(spectrum_cmd+"_frame-"+str(frame+1)+".dat"+"\n")
     
     if save_wf[0].lower() == 'y':
        outfil.write(" save sample_frame-"+str(frame+1)+".xml \n")
