@@ -31,10 +31,11 @@ warning="\e[31m"
 cell_param_default=""
 qbox_cmd1=' randomize_wf, run -atomic_density 0 80 10'  # placeholder for qbox command for 1st iteration 
 qbox_cmd2=' run -atomic_density 0 80 10'       # run command for other iteration  
-cube_dir='cube_files/'
-plot_cmd="plot -wf 410 WF/wf410, plot -wf 411 WF/wf411, plot -wf 412 WF/wf412, plot -wf 413 WF/wf413, plot -wf 414 WF/wf414, plot -wf 415 WF/wf415, plot -wf 416 WF/wf416, plot -wf 417 WF/wf417, plot -wf 418 WF/wf418, plot -wf 419 WF/wf419, plot -wf 420 WF/wf420, plot -wf 421 WF/wf421, plot -wf 422 WF/wf422, plot -wf 423 WF/wf423, plot -wf 424 WF/wf424, plot -wf 425 WF/wf425, plot -wf 425 WF/wf425, plot -wf 426 WF/wf426, plot -wf 427 WF/wf427, plot -wf 428 WF/wf428, plot -wf 429 WF/wf429, plot -wf 430 WF/wf430, plot -wf 431 WF/wf431, plot -wf 432 WF/wf432, plot -wf 433 WF/wf433, plot -wf 434 WF/wf434, plot -wf 435 WF/wf435, plot -wf 436 WF/wf436, plot -wf 437 WF/wf437, plot -wf 438 WF/wf438, plot -wf 439 WF/wf439, plot -wf 440 WF/wf440, plot -wf 440 WF/wf440, plot -wf 440 WF/wf441 plot -wf 442 WF/wf442, plot -wf 443 WF/wf443, plot -wf 444 WF/wf444, plot -wf 445 WF/wf445, plot -wf 446 WF/wf446, plot -wf 447 WF/wf447, plot -wf 448 WF/wf448, plot -wf 449 WF/wf449, plot -wf 450 WF/wf450"
+cube_dir='WF'
+plot_cmd=" plot -wf 410 ${cube_dir}/wf410"
+for i in `seq 411 450`; do plot_cmd=${plot_cmd}", plot -wf ${i} ${cube_dir}/wf${i}"; done
 spectrum_dir='spectrum/'
-spectrum_cmd="spectrum spectrum/2aC"
+spectrum_cmd="spectrum spectrum/spec"
 save_wf=''     
 xc='PBE'
 wf_dyn='JD'
@@ -42,7 +43,6 @@ ecut='50.0'
 scf_tol='1.00e-8'
 nempty='100'
 pseudo='ONCV_PBE-1.0'
-
 
 echo 
 echo
